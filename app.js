@@ -302,8 +302,11 @@ function showStatus(msg, type) {
 document.addEventListener('DOMContentLoaded', () => {
   const { username, token } = getSettings();
 
-  // Show setup if not configured
+  // Show setup if not configured, pre-filling defaults
   if (!username || !token) {
+    document.getElementById('gh-username').value = username || 'dhiyanshiai';
+    document.getElementById('gh-repo').value     = localStorage.getItem('gh_repo') || 'autobiography-saurav';
+    document.getElementById('gh-token').value    = token || '';
     document.getElementById('setup-overlay').classList.remove('hidden');
   }
 
