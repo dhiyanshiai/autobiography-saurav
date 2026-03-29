@@ -53,19 +53,15 @@
       </div>
     </section>
 
-    <!-- Story within Chapter -->
+    <!-- Stories within Chapter -->
     <section class="section">
-      <label class="label" for="entry-story">Story / Theme <span class="optional">(optional)</span></label>
-      <input
-        type="text"
-        id="entry-story"
-        class="input"
-        placeholder="e.g. Red cycle in Ahmedabad, First day at college…"
-        autocapitalize="sentences"
-        list="story-list"
-      >
-      <datalist id="story-list"></datalist>
-      <div class="story-hint">Stories group entries within a chapter. Type to reuse or create new.</div>
+      <div class="story-header">
+        <label class="label" style="margin-bottom:0">Story</label>
+        <span class="story-subtext">Tap to select · + to create new</span>
+      </div>
+      <div id="story-chips" class="story-chips">
+        <span class="story-empty">No stories yet — tap + to add one</span>
+      </div>
     </section>
 
     <!-- Voice Input -->

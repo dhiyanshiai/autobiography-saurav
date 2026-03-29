@@ -73,6 +73,8 @@ function renderChapterSelect(selectSlug) {
 
 // ─── Story Management ─────────────────────────────────────────────────────────
 
+var selectedStory = '';
+
 function getStories(chapterSlug) {
   try {
     var all = JSON.parse(localStorage.getItem('stories') || '{}');
@@ -95,13 +97,32 @@ function saveStory(chapterSlug, storyName) {
   } catch(e) {}
 }
 
-function updateStoryDatalist() {
-  var chapter  = document.getElementById('chapter-select').value;
-  var stories  = getStories(chapter);
-  var datalist = document.getElementById('story-list');
-  datalist.innerHTML = stories.map(function(s) {
-    return '<option value="' + escapeHtml(s) + '">';
-  }).join('');
+function renderStoryChips() {
+  var chapter   = document.getElementById('chapter-select').value;
+  var stories   = getStories(chapter);
+  var container = document.getElementById('story-chips');
+
+  var html = '';
+  if (stories.length === 0) {
+    html += '<span class="story-empty">No stories yet — tap + to add one</span>';
+  } else {
+    html += stories.map(function(s) {
+      var active = s === selectedStory ? ' chip-active' : '';
+      return '<button class="chip' + active + '" data-story="' + escapeHtml(s) + '">' + escapeHtml(s) + '</button>';
+    }).join('');
+  }
+  html += '<button class="chip chip-add" id="add-story-btn">+</button>';
+  container.innerHTML = html;
+}
+
+function promptAddStory() {
+  var name = prompt('New story name:');
+  if (name && name.trim()) {
+    var chapter = document.getElementById('chapter-select').value;
+    saveStory(chapter, name.trim());
+    selectedStory = name.trim();
+    renderStoryChips();
+  }
 }
 
 // ─── Settings ────────────────────────────────────────────────────────────────
@@ -243,7 +264,7 @@ async function submitEntry() {
 
   var text        = document.getElementById('entry-text').value.trim();
   var chapterSlug = document.getElementById('chapter-select').value;
-  var story       = document.getElementById('entry-story').value.trim();
+  var story       = selectedStory;
   var tags        = document.getElementById('entry-tags').value.trim();
 
   if (chapterSlug === '__add__') {
@@ -296,9 +317,8 @@ async function submitEntry() {
 // ─── Entry Management ─────────────────────────────────────────────────────────
 
 function clearEntry() {
-  document.getElementById('entry-text').value  = '';
-  document.getElementById('entry-story').value = '';
-  document.getElementById('entry-tags').value  = '';
+  document.getElementById('entry-text').value = '';
+  document.getElementById('entry-tags').value = '';
   updateCharCount();
   if (isRecording) stopRecording();
 }
@@ -378,12 +398,25 @@ function init() {
       if (name && name.trim()) {
         addChapter(name.trim());
       } else {
-        // Revert to first chapter
         var chapters = getChapters();
         this.value = chapters.length ? chapters[0].slug : '';
       }
     }
-    updateStoryDatalist();
+    selectedStory = '';
+    renderStoryChips();
+  });
+
+  // Story chip clicks — event delegation
+  document.getElementById('story-chips').addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.id === 'add-story-btn') {
+      promptAddStory();
+    } else {
+      var story = btn.dataset.story;
+      selectedStory = (selectedStory === story) ? '' : story; // toggle
+      renderStoryChips();
+    }
   });
 
   // Wire buttons
@@ -407,7 +440,7 @@ function init() {
   if (urlChap)  { document.getElementById('chapter-select').value = urlChap; }
   if (urlStory) { document.getElementById('entry-story').value = urlStory; }
 
-  updateStoryDatalist();
+  renderStoryChips();
   renderRecentEntries();
 }
 
