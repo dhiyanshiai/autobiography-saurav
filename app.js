@@ -194,6 +194,11 @@ async function submitEntry() {
   btn.disabled   = true;
   btn.innerHTML  = '<span class="spinner"></span> Saving…';
 
+  var apiUrl = 'https://api.github.com/repos/' + username + '/' + repo + '/contents/' + path;
+  console.log('URL:', apiUrl);
+  console.log('Token prefix:', token.substring(0, 8));
+  console.log('Encoded length:', encoded.length);
+
   try {
     const res = await fetch(
       `https://api.github.com/repos/${username}/${repo}/contents/${path}`,
