@@ -13,27 +13,25 @@ const CHAPTERS = {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
+// Worker URL — update this after deploying your Cloudflare Worker
+var WORKER_URL = localStorage.getItem('worker_url') || '';
+
 function getSettings() {
   return {
-    username: localStorage.getItem('gh_username') || 'dhiyanshiai',
-    repo:     localStorage.getItem('gh_repo')     || 'autobiography-saurav',
-    token:    localStorage.getItem('gh_token')    || ''
+    workerUrl: localStorage.getItem('worker_url') || ''
   };
 }
 
 function saveSettings() {
-  const username = document.getElementById('gh-username').value.trim();
-  const repo     = document.getElementById('gh-repo').value.trim();
-  const token    = document.getElementById('gh-token').value.trim();
+  var workerUrl = document.getElementById('worker-url').value.trim();
 
-  if (!username || !repo || !token) {
-    showStatus('Please fill in all fields.', 'error');
+  if (!workerUrl) {
+    showStatus('Please enter your Worker URL.', 'error');
     return;
   }
 
-  localStorage.setItem('gh_username', username);
-  localStorage.setItem('gh_repo',     repo);
-  localStorage.setItem('gh_token',    token);
+  localStorage.setItem('worker_url', workerUrl);
+  WORKER_URL = workerUrl;
 
   closeSettings();
   showStatus('Settings saved! You\'re ready to capture your story.', 'success');
@@ -41,10 +39,7 @@ function saveSettings() {
 }
 
 function openSettings() {
-  const { username, repo, token } = getSettings();
-  document.getElementById('gh-username').value = username;
-  document.getElementById('gh-repo').value     = repo;
-  document.getElementById('gh-token').value    = token;
+  document.getElementById('worker-url').value = localStorage.getItem('worker_url') || '';
   document.getElementById('setup-overlay').classList.remove('hidden');
 }
 
@@ -170,9 +165,7 @@ function toBase64(str) {
 }
 
 async function submitEntry() {
-  const { username, repo, token } = getSettings();
-
-  if (!username || !token) {
+  if (!WORKER_URL) {
     openSettings();
     return;
   }
@@ -194,26 +187,16 @@ async function submitEntry() {
   btn.disabled   = true;
   btn.innerHTML  = '<span class="spinner"></span> Saving…';
 
-  var apiUrl = 'https://api.github.com/repos/' + username + '/' + repo + '/contents/' + path;
-  console.log('URL:', apiUrl);
-  console.log('Token prefix:', token.substring(0, 8));
-  console.log('Encoded length:', encoded.length);
-
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/contents/${path}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type':  'application/json'
-        },
-        body: JSON.stringify({
-          message: 'Add entry: ' + CHAPTERS[chapter] + ' - ' + date,
-          content: encoded
-        })
-      }
-    );
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path:    path,
+        message: 'Add entry: ' + CHAPTERS[chapter] + ' - ' + date,
+        content: encoded
+      })
+    });
 
     if (res.ok) {
       const chapterName = CHAPTERS[chapter];
@@ -325,11 +308,8 @@ function init() {
   });
   document.getElementById('entry-text').addEventListener('input', updateCharCount);
 
-  // Show setup if not configured
-  if (!settings.username || !settings.token) {
-    document.getElementById('gh-username').value = settings.username || 'dhiyanshiai';
-    document.getElementById('gh-repo').value     = settings.repo || 'autobiography-saurav';
-    document.getElementById('gh-token').value    = settings.token || '';
+  // Show setup if worker URL not configured
+  if (!settings.workerUrl) {
     document.getElementById('setup-overlay').classList.remove('hidden');
   }
 

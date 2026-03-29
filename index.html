@@ -15,20 +15,12 @@
   <!-- Setup Modal -->
   <div id="setup-overlay" class="overlay hidden">
     <div class="modal">
-      <h2>Connect to GitHub</h2>
-      <p>Your entries will be saved directly to your GitHub repository. This is a one-time setup.</p>
+      <h2>One-Time Setup</h2>
+      <p>Enter your Cloudflare Worker URL. Your GitHub token is stored securely inside the Worker — never in your browser.</p>
       <div class="form-group">
-        <label for="gh-username">GitHub Username</label>
-        <input type="text" id="gh-username" placeholder="dhiyanshiai" autocomplete="off" autocapitalize="none">
-      </div>
-      <div class="form-group">
-        <label for="gh-repo">Repository Name</label>
-        <input type="text" id="gh-repo" value="autobiography-saurav" placeholder="autobiography-saurav" autocomplete="off" autocapitalize="none">
-      </div>
-      <div class="form-group">
-        <label for="gh-token">Personal Access Token</label>
-        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
-        <small>Needs <strong>Contents: Read & Write</strong> permission. Stored only in your browser.</small>
+        <label for="worker-url">Worker URL</label>
+        <input type="url" id="worker-url" placeholder="https://autobiography-proxy.yourname.workers.dev" autocomplete="off" autocapitalize="none">
+        <small>Deploy the worker from <strong>worker/index.js</strong> in this repo. See README for steps.</small>
       </div>
       <button class="btn-primary full-width" id="save-settings-btn">Save &amp; Continue</button>
     </div>
