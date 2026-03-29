@@ -47,17 +47,25 @@
       <label class="label" for="chapter-select">Chapter</label>
       <div class="select-wrapper">
         <select id="chapter-select" class="select">
-          <option value="01-childhood">1. Childhood</option>
-          <option value="02-college-engineering">2. College Days — Engineering</option>
-          <option value="03-early-career">3. Early Career — Work after Engineering</option>
-          <option value="04-mba-pivot">4. The MBA Pivot — Engineering to Finance</option>
-          <option value="05-post-mba-growth">5. Post-MBA Work — Struggles &amp; Growth</option>
-          <option value="06-corporate-journey">6. Corporate Journey — Companies &amp; Roles</option>
-          <option value="07-family-life">7. Family Life — Parents, Ancestors, Wife</option>
-          <option value="08-flipkart-ai">8. Flipkart &amp; the AI Awakening</option>
+          <!-- populated dynamically by app.js -->
         </select>
         <svg class="select-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
       </div>
+    </section>
+
+    <!-- Story within Chapter -->
+    <section class="section">
+      <label class="label" for="entry-story">Story / Theme <span class="optional">(optional)</span></label>
+      <input
+        type="text"
+        id="entry-story"
+        class="input"
+        placeholder="e.g. Red cycle in Ahmedabad, First day at college…"
+        autocapitalize="sentences"
+        list="story-list"
+      >
+      <datalist id="story-list"></datalist>
+      <div class="story-hint">Stories group entries within a chapter. Type to reuse or create new.</div>
     </section>
 
     <!-- Voice Input -->

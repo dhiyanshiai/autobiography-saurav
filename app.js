@@ -1,41 +1,127 @@
 // autobiography-saurav / app.js
 
-const CHAPTERS = {
-  '01-childhood':           'Childhood',
-  '02-college-engineering': 'College Days — Engineering',
-  '03-early-career':        'Early Career — Work after Engineering',
-  '04-mba-pivot':           'The MBA Pivot — Engineering to Finance',
-  '05-post-mba-growth':     'Post-MBA Work — Struggles & Growth',
-  '06-corporate-journey':   'Corporate Journey — Companies & Roles',
-  '07-family-life':         'Family Life — Parents, Ancestors, Wife',
-  '08-flipkart-ai':         'Flipkart & the AI Awakening'
-};
+// ─── Default Chapters ─────────────────────────────────────────────────────────
+
+var DEFAULT_CHAPTERS = [
+  { name: 'Childhood',                              slug: '01-childhood' },
+  { name: 'College Days — Engineering',             slug: '02-college-engineering' },
+  { name: 'Early Career — Work after Engineering',  slug: '03-early-career' },
+  { name: 'The MBA Pivot — Engineering to Finance', slug: '04-mba-pivot' },
+  { name: 'Post-MBA Work — Struggles & Growth',     slug: '05-post-mba-growth' },
+  { name: 'Corporate Journey — Companies & Roles',  slug: '06-corporate-journey' },
+  { name: 'Family Life — Parents, Ancestors, Wife', slug: '07-family-life' },
+  { name: 'Flipkart & the AI Awakening',            slug: '08-flipkart-ai' }
+];
+
+// ─── Chapter Management ───────────────────────────────────────────────────────
+
+function slugify(name) {
+  return name.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+function getChapters() {
+  try {
+    var stored = JSON.parse(localStorage.getItem('chapters') || 'null');
+    return stored || DEFAULT_CHAPTERS;
+  } catch(e) {
+    return DEFAULT_CHAPTERS;
+  }
+}
+
+function saveChapters(chapters) {
+  localStorage.setItem('chapters', JSON.stringify(chapters));
+}
+
+function addChapter(name) {
+  name = name.trim();
+  if (!name) return;
+  var chapters = getChapters();
+  var slug = slugify(name);
+  if (chapters.some(function(c) { return c.slug === slug; })) {
+    showStatus('Chapter already exists.', 'error');
+    return;
+  }
+  chapters.push({ name: name, slug: slug });
+  saveChapters(chapters);
+  renderChapterSelect(slug);
+  showStatus('Chapter "' + name + '" added.', 'success');
+}
+
+function getChapterName(slug) {
+  var chapters = getChapters();
+  var found = chapters.filter(function(c) { return c.slug === slug; })[0];
+  return found ? found.name : slug;
+}
+
+function renderChapterSelect(selectSlug) {
+  var select   = document.getElementById('chapter-select');
+  var current  = selectSlug || select.value;
+  var chapters = getChapters();
+
+  select.innerHTML = chapters.map(function(c) {
+    return '<option value="' + c.slug + '">' + c.name + '</option>';
+  }).join('') + '<option value="__add__">+ Add new chapter…</option>';
+
+  if (current && current !== '__add__') {
+    select.value = current;
+  }
+}
+
+// ─── Story Management ─────────────────────────────────────────────────────────
+
+function getStories(chapterSlug) {
+  try {
+    var all = JSON.parse(localStorage.getItem('stories') || '{}');
+    return all[chapterSlug] || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveStory(chapterSlug, storyName) {
+  storyName = storyName.trim();
+  if (!storyName) return;
+  try {
+    var all = JSON.parse(localStorage.getItem('stories') || '{}');
+    if (!all[chapterSlug]) all[chapterSlug] = [];
+    if (all[chapterSlug].indexOf(storyName) === -1) {
+      all[chapterSlug].push(storyName);
+    }
+    localStorage.setItem('stories', JSON.stringify(all));
+  } catch(e) {}
+}
+
+function updateStoryDatalist() {
+  var chapter  = document.getElementById('chapter-select').value;
+  var stories  = getStories(chapter);
+  var datalist = document.getElementById('story-list');
+  datalist.innerHTML = stories.map(function(s) {
+    return '<option value="' + escapeHtml(s) + '">';
+  }).join('');
+}
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
-// Worker URL
 var WORKER_URL = localStorage.getItem('worker_url') || 'https://shiny-leaf-b57d.dhiyanshi-technologies.workers.dev';
 
 function getSettings() {
-  return {
-    workerUrl: localStorage.getItem('worker_url') || ''
-  };
+  return { workerUrl: localStorage.getItem('worker_url') || '' };
 }
 
 function saveSettings() {
   var workerUrl = document.getElementById('worker-url').value.trim();
-
   if (!workerUrl) {
     showStatus('Please enter your Worker URL.', 'error');
     return;
   }
-
   localStorage.setItem('worker_url', workerUrl);
   WORKER_URL = workerUrl;
-
   closeSettings();
-  showStatus('Settings saved! You\'re ready to capture your story.', 'success');
-  renderRecentEntries();
+  showStatus('Settings saved!', 'success');
 }
 
 function openSettings() {
@@ -47,24 +133,14 @@ function closeSettings() {
   document.getElementById('setup-overlay').classList.add('hidden');
 }
 
-// Close modal on backdrop click
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('setup-overlay').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('setup-overlay')) {
-      const { username, token } = getSettings();
-      if (username && token) closeSettings();
-    }
-  });
-});
-
 // ─── Voice Recognition ────────────────────────────────────────────────────────
 
-let recognition  = null;
-let isRecording  = false;
-let finalText    = '';
+var recognition = null;
+var isRecording = false;
+var finalText   = '';
 
 function initSpeechRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return false;
 
   recognition = new SR();
@@ -72,10 +148,10 @@ function initSpeechRecognition() {
   recognition.interimResults = true;
   recognition.lang           = 'en-US';
 
-  recognition.onresult = (event) => {
-    let interim = '';
+  recognition.onresult = function(event) {
+    var interim = '';
     finalText = '';
-    for (let i = 0; i < event.results.length; i++) {
+    for (var i = 0; i < event.results.length; i++) {
       if (event.results[i].isFinal) {
         finalText += event.results[i][0].transcript + ' ';
       } else {
@@ -86,16 +162,16 @@ function initSpeechRecognition() {
     updateCharCount();
   };
 
-  recognition.onerror = (event) => {
+  recognition.onerror = function(event) {
     stopRecording();
     if (event.error === 'not-allowed') {
-      showStatus('Microphone access denied. Please allow microphone in browser settings.', 'error');
+      showStatus('Microphone access denied.', 'error');
     } else if (event.error !== 'aborted') {
       showStatus('Voice error: ' + event.error + '. Try typing instead.', 'error');
     }
   };
 
-  recognition.onend = () => {
+  recognition.onend = function() {
     if (isRecording) stopRecording();
   };
 
@@ -103,60 +179,56 @@ function initSpeechRecognition() {
 }
 
 function toggleRecording() {
-  if (isRecording) {
-    stopRecording();
-  } else {
-    startRecording();
-  }
+  if (isRecording) { stopRecording(); } else { startRecording(); }
 }
 
 function startRecording() {
   if (!recognition && !initSpeechRecognition()) {
-    showStatus('Voice recognition not supported here. Use your keyboard mic button instead.', 'error');
+    showStatus('Voice not supported. Use your keyboard mic button.', 'error');
     return;
   }
-
   try {
     finalText = document.getElementById('entry-text').value;
     recognition.start();
     isRecording = true;
     document.getElementById('mic-btn').classList.add('recording');
     document.getElementById('voice-status').textContent = 'Listening… tap to stop';
-  } catch (e) {
+  } catch(e) {
     showStatus('Could not start microphone. Try again.', 'error');
   }
 }
 
 function stopRecording() {
-  if (recognition) {
-    try { recognition.stop(); } catch (_) {}
-  }
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
   isRecording = false;
   document.getElementById('mic-btn').classList.remove('recording');
   document.getElementById('voice-status').textContent = 'Tap to record voice';
 }
 
-// ─── GitHub API ───────────────────────────────────────────────────────────────
+// ─── File & Markdown ──────────────────────────────────────────────────────────
 
-function buildFilePath(chapter) {
-  const now      = new Date();
-  const date     = now.toISOString().slice(0, 10);
-  const time     = now.toTimeString().slice(0, 5).replace(':', '-');
+function buildFilePath(chapterSlug, storySlug) {
+  var now  = new Date();
+  var date = now.toISOString().slice(0, 10);
+  var time = now.toTimeString().slice(0, 5).replace(':', '-');
+  var folder = storySlug ? 'entries/' + chapterSlug + '/' + storySlug + '/' : 'entries/' + chapterSlug + '/';
   return {
-    path:     `entries/${chapter}/${date}_${time}_raw.md`,
-    date,
-    time:     now.toTimeString().slice(0, 5)
+    path: folder + date + '_' + time + '_raw.md',
+    date: date,
+    time: now.toTimeString().slice(0, 5)
   };
 }
 
-function buildMarkdown(text, chapter, date, time, tags) {
-  const tagLine = tags ? `tags: [${tags.split(',').map(t => t.trim()).filter(Boolean).join(', ')}]\n` : '';
-  return `---\ndate: ${date}\ntime: ${time}\nchapter: ${chapter}\n${tagLine}---\n\n${text.trim()}\n`;
+function buildMarkdown(text, chapterSlug, chapterName, story, date, time, tags) {
+  var lines = '---\ndate: ' + date + '\ntime: ' + time + '\nchapter: ' + chapterSlug + '\nchapter_name: ' + chapterName + '\n';
+  if (story) lines += 'story: ' + story + '\n';
+  if (tags)  lines += 'tags: [' + tags.split(',').map(function(t) { return t.trim(); }).filter(Boolean).join(', ') + ']\n';
+  lines += '---\n\n' + text.trim() + '\n';
+  return lines;
 }
 
-// btoa with Unicode support (iOS Safari compatible)
 function toBase64(str) {
-  var bytes = new TextEncoder().encode(str);
+  var bytes  = new TextEncoder().encode(str);
   var binary = '';
   for (var i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -164,50 +236,56 @@ function toBase64(str) {
   return btoa(binary);
 }
 
+// ─── Submit ───────────────────────────────────────────────────────────────────
+
 async function submitEntry() {
-  if (!WORKER_URL) {
-    openSettings();
+  if (!WORKER_URL) { openSettings(); return; }
+
+  var text        = document.getElementById('entry-text').value.trim();
+  var chapterSlug = document.getElementById('chapter-select').value;
+  var story       = document.getElementById('entry-story').value.trim();
+  var tags        = document.getElementById('entry-tags').value.trim();
+
+  if (chapterSlug === '__add__') {
+    showStatus('Please select or add a chapter first.', 'error');
     return;
   }
-
-  const text    = document.getElementById('entry-text').value.trim();
-  const chapter = document.getElementById('chapter-select').value;
-  const tags    = document.getElementById('entry-tags').value.trim();
-
   if (!text) {
     showStatus('Please add some content before saving.', 'error');
     return;
   }
 
-  const { path, date, time } = buildFilePath(chapter);
-  const content  = buildMarkdown(text, chapter, date, time, tags);
-  const encoded  = toBase64(content);
-  const btn      = document.getElementById('submit-btn');
+  var chapterName = getChapterName(chapterSlug);
+  var storySlug   = story ? slugify(story) : '';
+  var fp          = buildFilePath(chapterSlug, storySlug);
+  var content     = buildMarkdown(text, chapterSlug, chapterName, story, fp.date, fp.time, tags);
+  var encoded     = toBase64(content);
+  var btn         = document.getElementById('submit-btn');
 
-  btn.disabled   = true;
-  btn.innerHTML  = '<span class="spinner"></span> Saving…';
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
 
   try {
-    const res = await fetch(WORKER_URL, {
+    var res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        path:    path,
-        message: 'Add entry: ' + CHAPTERS[chapter] + ' - ' + date,
+        path:    fp.path,
+        message: 'Add entry: ' + chapterName + (story ? ' / ' + story : '') + ' - ' + fp.date,
         content: encoded
       })
     });
 
     if (res.ok) {
-      const chapterName = CHAPTERS[chapter];
-      showStatus(`Saved to ${chapter}/${date}_${time.replace(':', '-')}_raw.md`, 'success');
-      addToLocalHistory({ chapter, chapterName, date, time, preview: text.slice(0, 100) });
+      if (story) saveStory(chapterSlug, story);
+      showStatus('Saved to ' + (story ? chapterName + ' / ' + story : chapterName), 'success');
+      addToLocalHistory({ chapter: chapterSlug, chapterName: chapterName, story: story, date: fp.date, time: fp.time, preview: text.slice(0, 100) });
       clearEntry();
     } else {
-      const err = await res.json();
-      showStatus(`GitHub error: ${err.message}`, 'error');
+      var err = await res.json();
+      showStatus('GitHub error: ' + err.message, 'error');
     }
-  } catch (e) {
+  } catch(e) {
     showStatus('Error: ' + e.name + ' - ' + e.message, 'error');
   } finally {
     btn.disabled  = false;
@@ -218,21 +296,21 @@ async function submitEntry() {
 // ─── Entry Management ─────────────────────────────────────────────────────────
 
 function clearEntry() {
-  document.getElementById('entry-text').value = '';
+  document.getElementById('entry-text').value  = '';
+  document.getElementById('entry-story').value = '';
   document.getElementById('entry-tags').value  = '';
   updateCharCount();
   if (isRecording) stopRecording();
 }
 
 function updateCharCount() {
-  const len = document.getElementById('entry-text').value.length;
-  document.getElementById('char-count').textContent = len;
+  document.getElementById('char-count').textContent = document.getElementById('entry-text').value.length;
 }
 
-// ─── Local History (display only — source of truth is GitHub) ─────────────────
+// ─── Local History ────────────────────────────────────────────────────────────
 
 function addToLocalHistory(entry) {
-  let history = getHistory();
+  var history = getHistory();
   history.unshift(entry);
   history = history.slice(0, 15);
   localStorage.setItem('entry_history', JSON.stringify(history));
@@ -240,97 +318,99 @@ function addToLocalHistory(entry) {
 }
 
 function getHistory() {
-  try {
-    return JSON.parse(localStorage.getItem('entry_history') || '[]');
-  } catch(e) {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem('entry_history') || '[]'); }
+  catch(e) { return []; }
 }
 
 function renderRecentEntries() {
-  const history   = getHistory();
-  const container = document.getElementById('recent-list');
-  const countEl   = document.getElementById('entry-count');
+  var history   = getHistory();
+  var container = document.getElementById('recent-list');
+  var countEl   = document.getElementById('entry-count');
 
-  countEl.textContent = history.length ? `${history.length} saved` : '';
+  countEl.textContent = history.length ? history.length + ' saved' : '';
 
   if (history.length === 0) {
     container.innerHTML = '<p class="empty-msg">No entries yet. Start capturing your story!</p>';
     return;
   }
 
-  container.innerHTML = history.map(e => `
-    <div class="entry-item">
-      <div class="entry-meta">
-        <span class="entry-chapter">${e.chapterName || CHAPTERS[e.chapter] || e.chapter}</span>
-        <span class="entry-date">${e.date} ${e.time || ''}</span>
-      </div>
-      <p class="entry-preview">${escapeHtml(e.preview)}${e.preview.length >= 100 ? '…' : ''}</p>
-    </div>
-  `).join('');
+  container.innerHTML = history.map(function(e) {
+    var storyBadge = e.story ? '<span class="entry-story">' + escapeHtml(e.story) + '</span>' : '';
+    return '<div class="entry-item">' +
+      '<div class="entry-meta">' +
+        '<span class="entry-chapter">' + escapeHtml(e.chapterName || e.chapter) + '</span>' +
+        storyBadge +
+        '<span class="entry-date">' + e.date + '</span>' +
+      '</div>' +
+      '<p class="entry-preview">' + escapeHtml(e.preview) + (e.preview.length >= 100 ? '…' : '') + '</p>' +
+    '</div>';
+  }).join('');
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ─── Status Messages ──────────────────────────────────────────────────────────
+// ─── Status ───────────────────────────────────────────────────────────────────
 
-let statusTimer = null;
+var statusTimer = null;
 
 function showStatus(msg, type) {
-  const el    = document.getElementById('status-msg');
+  var el = document.getElementById('status-msg');
   el.textContent = msg;
-  el.className   = `status ${type}`;
-
+  el.className   = 'status ' + type;
   if (statusTimer) clearTimeout(statusTimer);
   if (type === 'success') {
-    statusTimer = setTimeout(() => el.className = 'status hidden', 5000);
+    statusTimer = setTimeout(function() { el.className = 'status hidden'; }, 5000);
   }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 function init() {
-  var settings = getSettings();
+  // Render dynamic chapter dropdown
+  renderChapterSelect();
 
-  // Wire up buttons via JS (safer than onclick on iOS)
+  // Chapter change handler
+  document.getElementById('chapter-select').addEventListener('change', function() {
+    if (this.value === '__add__') {
+      var name = prompt('New chapter name:');
+      if (name && name.trim()) {
+        addChapter(name.trim());
+      } else {
+        // Revert to first chapter
+        var chapters = getChapters();
+        this.value = chapters.length ? chapters[0].slug : '';
+      }
+    }
+    updateStoryDatalist();
+  });
+
+  // Wire buttons
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
   document.getElementById('settings-btn').addEventListener('click', openSettings);
   document.getElementById('submit-btn').addEventListener('click', submitEntry);
   document.getElementById('mic-btn').addEventListener('click', toggleRecording);
   document.querySelector('.btn-secondary').addEventListener('click', clearEntry);
-  document.getElementById('setup-overlay').addEventListener('click', function(e) {
-    if (e.target === document.getElementById('setup-overlay')) {
-      var s = getSettings();
-      if (s.username && s.token) closeSettings();
-    }
-  });
   document.getElementById('entry-text').addEventListener('input', updateCharCount);
+  document.getElementById('setup-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+  });
 
-  // Setup screen no longer needed — worker URL is pre-configured
-  // Uncomment below if you need to change the worker URL:
-  // if (!settings.workerUrl) {
-  //   document.getElementById('setup-overlay').classList.remove('hidden');
-  // }
-
-  // Pre-fill from URL params (for Siri Shortcut integration)
+  // URL params (Siri Shortcut)
   var params  = new URLSearchParams(window.location.search);
   var urlText = params.get('text');
   var urlChap = params.get('chapter');
+  var urlStory = params.get('story');
 
-  if (urlText) {
-    document.getElementById('entry-text').value = urlText;
-    updateCharCount();
-  }
-  if (urlChap && CHAPTERS[urlChap]) {
-    document.getElementById('chapter-select').value = urlChap;
-  }
+  if (urlText)  { document.getElementById('entry-text').value  = urlText;  updateCharCount(); }
+  if (urlChap)  { document.getElementById('chapter-select').value = urlChap; }
+  if (urlStory) { document.getElementById('entry-story').value = urlStory; }
 
+  updateStoryDatalist();
   renderRecentEntries();
 }
 
-// Script is at bottom of body so DOM is already ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
