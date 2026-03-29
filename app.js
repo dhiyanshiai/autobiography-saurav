@@ -340,4 +340,9 @@ function init() {
   renderRecentEntries();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Script is at bottom of body so DOM is already ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
