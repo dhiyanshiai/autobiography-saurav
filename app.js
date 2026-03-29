@@ -200,9 +200,8 @@ async function submitEntry() {
       {
         method: 'PUT',
         headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type':  'application/json',
-          'Accept':        'application/vnd.github+json'
+          'Authorization': 'Bearer ' + token,
+          'Content-Type':  'application/json'
         },
         body: JSON.stringify({
           message: 'Add entry: ' + CHAPTERS[chapter] + ' - ' + date,
