@@ -28,7 +28,7 @@
         <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
         <small>Needs <strong>Contents: Read & Write</strong> permission. Stored only in your browser.</small>
       </div>
-      <button class="btn-primary full-width" onclick="saveSettings()">Save &amp; Continue</button>
+      <button class="btn-primary full-width" id="save-settings-btn">Save &amp; Continue</button>
     </div>
   </div>
 
@@ -41,7 +41,7 @@
           <span class="header-icon">📖</span>
           <h1>My Story</h1>
         </div>
-        <button class="icon-btn" onclick="openSettings()" title="Settings" aria-label="Settings">
+        <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -70,7 +70,7 @@
 
     <!-- Voice Input -->
     <section class="section voice-section">
-      <button id="mic-btn" class="mic-btn" onclick="toggleRecording()" aria-label="Toggle voice recording">
+      <button id="mic-btn" class="mic-btn" aria-label="Toggle voice recording">
         <svg id="mic-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V23h-3v2h8v-2h-3v-2.06A9 9 0 0 0 21 12v-2h-2z"/>
@@ -106,8 +106,8 @@
 
     <!-- Actions -->
     <section class="section actions">
-      <button class="btn-secondary" onclick="clearEntry()">Clear</button>
-      <button class="btn-primary" onclick="submitEntry()" id="submit-btn">
+      <button class="btn-secondary">Clear</button>
+      <button class="btn-primary" id="submit-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="20 6 9 17 4 12"/>
         </svg>

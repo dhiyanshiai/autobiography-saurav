@@ -250,7 +250,7 @@ function addToLocalHistory(entry) {
 function getHistory() {
   try {
     return JSON.parse(localStorage.getItem('entry_history') || '[]');
-  } catch {
+  } catch(e) {
     return [];
   }
 }
@@ -299,21 +299,35 @@ function showStatus(msg, type) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-  const { username, token } = getSettings();
+function init() {
+  var settings = getSettings();
 
-  // Show setup if not configured, pre-filling defaults
-  if (!username || !token) {
-    document.getElementById('gh-username').value = username || 'dhiyanshiai';
-    document.getElementById('gh-repo').value     = localStorage.getItem('gh_repo') || 'autobiography-saurav';
-    document.getElementById('gh-token').value    = token || '';
+  // Wire up buttons via JS (safer than onclick on iOS)
+  document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+  document.getElementById('settings-btn').addEventListener('click', openSettings);
+  document.getElementById('submit-btn').addEventListener('click', submitEntry);
+  document.getElementById('mic-btn').addEventListener('click', toggleRecording);
+  document.querySelector('.btn-secondary').addEventListener('click', clearEntry);
+  document.getElementById('setup-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('setup-overlay')) {
+      var s = getSettings();
+      if (s.username && s.token) closeSettings();
+    }
+  });
+  document.getElementById('entry-text').addEventListener('input', updateCharCount);
+
+  // Show setup if not configured
+  if (!settings.username || !settings.token) {
+    document.getElementById('gh-username').value = settings.username || 'dhiyanshiai';
+    document.getElementById('gh-repo').value     = settings.repo || 'autobiography-saurav';
+    document.getElementById('gh-token').value    = settings.token || '';
     document.getElementById('setup-overlay').classList.remove('hidden');
   }
 
   // Pre-fill from URL params (for Siri Shortcut integration)
-  const params  = new URLSearchParams(window.location.search);
-  const urlText = params.get('text');
-  const urlChap = params.get('chapter');
+  var params  = new URLSearchParams(window.location.search);
+  var urlText = params.get('text');
+  var urlChap = params.get('chapter');
 
   if (urlText) {
     document.getElementById('entry-text').value = urlText;
@@ -323,9 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('chapter-select').value = urlChap;
   }
 
-  // Character counter
-  document.getElementById('entry-text').addEventListener('input', updateCharCount);
-
-  // Load recent entries
   renderRecentEntries();
-});
+}
+
+document.addEventListener('DOMContentLoaded', init);
