@@ -13,8 +13,8 @@ const CHAPTERS = {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
-// Worker URL — update this after deploying your Cloudflare Worker
-var WORKER_URL = localStorage.getItem('worker_url') || '';
+// Worker URL
+var WORKER_URL = localStorage.getItem('worker_url') || 'https://shiny-leaf-b57d.dhiyanshi-technologies.workers.dev';
 
 function getSettings() {
   return {
@@ -308,10 +308,11 @@ function init() {
   });
   document.getElementById('entry-text').addEventListener('input', updateCharCount);
 
-  // Show setup if worker URL not configured
-  if (!settings.workerUrl) {
-    document.getElementById('setup-overlay').classList.remove('hidden');
-  }
+  // Setup screen no longer needed — worker URL is pre-configured
+  // Uncomment below if you need to change the worker URL:
+  // if (!settings.workerUrl) {
+  //   document.getElementById('setup-overlay').classList.remove('hidden');
+  // }
 
   // Pre-fill from URL params (for Siri Shortcut integration)
   var params  = new URLSearchParams(window.location.search);
