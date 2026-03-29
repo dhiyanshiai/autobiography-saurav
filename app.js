@@ -159,9 +159,14 @@ function buildMarkdown(text, chapter, date, time, tags) {
   return `---\ndate: ${date}\ntime: ${time}\nchapter: ${chapter}\n${tagLine}---\n\n${text.trim()}\n`;
 }
 
-// btoa with Unicode support
+// btoa with Unicode support (iOS Safari compatible)
 function toBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
+  var bytes = new TextEncoder().encode(str);
+  var binary = '';
+  for (var i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 async function submitEntry() {
@@ -200,7 +205,7 @@ async function submitEntry() {
           'Accept':        'application/vnd.github+json'
         },
         body: JSON.stringify({
-          message: `Add entry: ${CHAPTERS[chapter]} — ${date}`,
+          message: 'Add entry: ' + CHAPTERS[chapter] + ' - ' + date,
           content: encoded
         })
       }
@@ -216,7 +221,7 @@ async function submitEntry() {
       showStatus(`GitHub error: ${err.message}`, 'error');
     }
   } catch (e) {
-    showStatus(`Network error: ${e.message}. Check your connection.`, 'error');
+    showStatus('Error: ' + e.name + ' - ' + e.message, 'error');
   } finally {
     btn.disabled  = false;
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Save to GitHub';
