@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>My Story — Saurav</title>
@@ -102,7 +102,7 @@
 
     <!-- Actions -->
     <section class="section actions">
-      <button class="btn-secondary">Clear</button>
+      <button class="btn-secondary" aria-label="Clear entry form">Clear</button>
       <button class="btn-primary" id="submit-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="20 6 9 17 4 12"/>
@@ -113,6 +113,7 @@
 
     <!-- Status Message -->
     <div id="status-msg" class="status hidden"></div>
+    <div id="last-saved" class="last-saved hidden"></div>
 
     <!-- Recent Entries -->
     <section class="section recent-section">

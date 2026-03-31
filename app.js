@@ -108,10 +108,10 @@ function renderStoryChips() {
   } else {
     html += stories.map(function(s) {
       var active = s === selectedStory ? ' chip-active' : '';
-      return '<button class="chip' + active + '" data-story="' + escapeHtml(s) + '">' + escapeHtml(s) + '</button>';
+      return '<button class="chip' + active + '" data-story="' + escapeHtml(s) + '" aria-label="Select story: ' + escapeHtml(s) + '">' + escapeHtml(s) + '</button>';
     }).join('');
   }
-  html += '<button class="chip chip-add" id="add-story-btn">+</button>';
+  html += '<button class="chip chip-add" id="add-story-btn" aria-label="Add new story">+</button>';
   container.innerHTML = html;
 }
 
@@ -300,8 +300,10 @@ async function submitEntry() {
     if (res.ok) {
       if (story) saveStory(chapterSlug, story);
       showStatus('Saved to ' + (story ? chapterName + ' / ' + story : chapterName), 'success');
-      addToLocalHistory({ chapter: chapterSlug, chapterName: chapterName, story: story, date: fp.date, time: fp.time, preview: text.slice(0, 100) });
-      clearEntry();
+      addToLocalHistory({ chapter: chapterSlug, chapterName: chapterName, story: story, date: fp.date, time: fp.time, text: text, tags: tags, preview: text.slice(0, 100) });
+      localStorage.setItem('last_saved', new Date().toISOString());
+      updateLastSaved();
+      clearEntry(true);
     } else {
       var err = await res.json();
       showStatus('GitHub error: ' + err.message, 'error');
@@ -316,7 +318,12 @@ async function submitEntry() {
 
 // ─── Entry Management ─────────────────────────────────────────────────────────
 
-function clearEntry() {
+function clearEntry(skipConfirm) {
+  var text = document.getElementById('entry-text').value.trim();
+  var tags = document.getElementById('entry-tags').value.trim();
+  if (!skipConfirm && (text || tags)) {
+    if (!confirm('Clear all content? This cannot be undone.')) return;
+  }
   document.getElementById('entry-text').value = '';
   document.getElementById('entry-tags').value = '';
   updateCharCount();
@@ -347,22 +354,27 @@ function renderRecentEntries() {
   var container = document.getElementById('recent-list');
   var countEl   = document.getElementById('entry-count');
 
-  countEl.textContent = history.length ? history.length + ' saved' : '';
+  countEl.textContent = history.length ? history.length + ' of 15 shown' : '';
 
   if (history.length === 0) {
     container.innerHTML = '<p class="empty-msg">No entries yet. Start capturing your story!</p>';
     return;
   }
 
-  container.innerHTML = history.map(function(e) {
+  container.innerHTML = history.map(function(e, idx) {
     var storyBadge = e.story ? '<span class="entry-story">' + escapeHtml(e.story) + '</span>' : '';
+    var fullText = e.text || e.preview;
+    var isTruncated = fullText.length > 100;
     return '<div class="entry-item">' +
       '<div class="entry-meta">' +
         '<span class="entry-chapter">' + escapeHtml(e.chapterName || e.chapter) + '</span>' +
         storyBadge +
         '<span class="entry-date">' + e.date + '</span>' +
       '</div>' +
-      '<p class="entry-preview">' + escapeHtml(e.preview) + (e.preview.length >= 100 ? '…' : '') + '</p>' +
+      '<p class="entry-preview">' + escapeHtml(e.preview) + (isTruncated ? '…' : '') + '</p>' +
+      '<div class="entry-full hidden"><p>' + escapeHtml(fullText) + '</p>' +
+        '<button class="btn-reload" data-idx="' + idx + '">Load into editor</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -371,14 +383,26 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function updateLastSaved() {
+  var ts = localStorage.getItem('last_saved');
+  var el = document.getElementById('last-saved');
+  if (!ts) { el.classList.add('hidden'); return; }
+  var d = new Date(ts);
+  var str = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  el.textContent = 'Last saved: ' + str;
+  el.classList.remove('hidden');
+}
+
 // ─── Status ───────────────────────────────────────────────────────────────────
 
 var statusTimer = null;
 
 function showStatus(msg, type) {
-  var el = document.getElementById('status-msg');
-  el.textContent = msg;
+  var el   = document.getElementById('status-msg');
+  var icon = type === 'success' ? '\u2705 ' : type === 'error' ? '\u274c ' : '';
+  el.textContent = icon + msg;
   el.className   = 'status ' + type;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   if (statusTimer) clearTimeout(statusTimer);
   if (type === 'success') {
     statusTimer = setTimeout(function() { el.className = 'status hidden'; }, 5000);
@@ -430,6 +454,38 @@ function init() {
     if (e.target === this) closeSettings();
   });
 
+  // Escape key closes settings modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('setup-overlay').classList.contains('hidden')) {
+      closeSettings();
+    }
+  });
+
+  // Recent entries — tap to expand, load into editor
+  document.getElementById('recent-list').addEventListener('click', function(e) {
+    var reloadBtn = e.target.closest('.btn-reload');
+    if (reloadBtn) {
+      var idx = parseInt(reloadBtn.dataset.idx, 10);
+      var history = getHistory();
+      var entry = history[idx];
+      if (entry) {
+        document.getElementById('entry-text').value = entry.text || entry.preview;
+        document.getElementById('entry-tags').value = entry.tags || '';
+        document.getElementById('chapter-select').value = entry.chapter;
+        selectedStory = entry.story || '';
+        renderStoryChips();
+        updateCharCount();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+    var item = e.target.closest('.entry-item');
+    if (item) {
+      var full = item.querySelector('.entry-full');
+      if (full) full.classList.toggle('hidden');
+    }
+  });
+
   // URL params (Siri Shortcut)
   var params  = new URLSearchParams(window.location.search);
   var urlText = params.get('text');
@@ -438,10 +494,11 @@ function init() {
 
   if (urlText)  { document.getElementById('entry-text').value  = urlText;  updateCharCount(); }
   if (urlChap)  { document.getElementById('chapter-select').value = urlChap; }
-  if (urlStory) { document.getElementById('entry-story').value = urlStory; }
+  if (urlStory) { selectedStory = urlStory; }
 
   renderStoryChips();
   renderRecentEntries();
+  updateLastSaved();
 }
 
 if (document.readyState === 'loading') {

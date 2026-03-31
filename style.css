@@ -490,6 +490,15 @@ header h1 {
 
 .status.hidden { display: none; }
 
+.last-saved {
+  margin: 8px 20px 0;
+  font-size: 0.75rem;
+  color: var(--text-hint);
+  text-align: right;
+}
+
+.last-saved.hidden { display: none; }
+
 .status.success {
   background: var(--success-bg);
   border: 1px solid var(--success-border);
@@ -531,10 +540,41 @@ header h1 {
   padding: 14px 16px;
   margin-bottom: 10px;
   transition: border-color 0.2s;
+  cursor: pointer;
 }
 
 .entry-item:hover {
   border-color: var(--border-focus);
+}
+
+.entry-full {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.entry-full.hidden { display: none; }
+
+.btn-reload {
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: var(--primary-glow);
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-reload:active {
+  transform: scale(0.97);
 }
 
 .entry-meta {
